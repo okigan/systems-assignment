@@ -1,6 +1,6 @@
 # Key-Value Server
 
-Your job is to build a simple key-value server. 
+Your job is to build a simple [key-value server](https://en.wikipedia.org/wiki/Key%E2%80%93value_database). 
 
 To make the task easier, the server only serves read-only data that is provided in a separate file. The data doesn't need to be mutated in any way by the server. Clients need to be able to contact the server over network (you can choose the protocol), send a query containing a key, and the server will answer with the corresponding value from the dataset, if the given key exists.
 
