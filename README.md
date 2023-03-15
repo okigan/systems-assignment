@@ -10,7 +10,7 @@ The key-value data is provided in the following format:
 f8a24bb8-eff8-41dc-929b-10b4c3e49e05 1234
 0cdfafb5-edb4-48a6-a7ec-5b1a75831f91 here is another value
 ```
-The first column contains the key which is always a valid [UUID (version 4)](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)). A single space chacterter separates the key from the value that is the rest of the line until a newline (\n) character. You can use an example data file stored in this repository, `example.data`, for testing.
+The first column contains the key which is always a valid [UUID (version 4)](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)). A single space character separates the key from the value that is the rest of the line until a newline (\n) character. You can use an example data file stored in this repository, `example.data`, for testing.
 
 You are free to use any common programming language for your implementation. You can choose to use either HTTP or TCP for communication with the server. You can decide the details of the protocol. Your server should accept a single command line argument during startup that defines a path to the data file.
 
