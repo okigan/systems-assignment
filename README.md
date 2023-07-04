@@ -1,3 +1,80 @@
+# Assignment notes
+
+## Notes:
+* not much know about the call pattern from the client(s), assuming mostly random access and that clients use correct keys
+* setup with basic Python environment and tooling (just pyenv, no poetry, no docker, no k8s, or other fancy stuff) everything invoked from Makefile
+
+## class KVServiceBisect:
+    Assumptions: 
+    - we want very low memory footprint, after index construction
+    - we want a fast restart
+    - we can use more than 1 cpu(s)
+    Behavior: 
+    - very low memory footprint
+    - working set independent of the size of the data in the data file (tested with 100M)
+    - minimal working set also independent of the number of time items the data file
+    - index can be re-used by multiple processes
+    - uses single core, an additional process(es) can be started
+    Limitations:
+    - currently configured to handle ~1TB (~200M kv items) of data file, easily extended to more with a slight increase of index file
+
+
+## class KVServiceDict:
+    Assumptions: 
+    - we want fast lookup, ok to use more memory
+    - ok to take time on startup
+    Behavior: 
+    - very fast lookup
+    - takes time to start
+    - memory footprint independent of the size of the data in the data file (tested with 100M)
+    - memory footprint depends on number of items in the data file (tested with 100M ~ 15 GB)
+    - index is not shared between processes
+    - uses single core, additional processes can be started, mind the memory footprint
+
+## class KVServiceMock:
+    Mock implementation for performance baseline testing
+
+## Usage:
+- program support command line help, see Makefile for example usage
+- program performs mini benchmark on startup (excluding http/fastapi overhead)
+- API documentation is available at http://localhost:5000/docs
+
+### to start bisect based server:
+```make run-bisect```
+
+with 10M entries on a single core of 
+
+    model name      : Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz
+    bogomips        : 5187.54
+
+    KVServiceBisect index built: 10,000,000 entries in 0.00014066696166992188s
+    Test pass execution time: 9.677794218063354 s
+    Average time per query: 9.677697441088944e-05s
+    RPS: 10,332.93307821658
+
+### to start dictionary based server:
+```make run-dict```
+
+with 10M entries on a single core of 
+
+    model name      : Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz
+    bogomips        : 5187.54
+
+    KVServiceDict index built: 10,000,000 entries in 41.469183921813965s
+    Test pass execution time: 0.4095578193664551 s
+    Average time per query: 4.095537238292168e-06s
+    RPS: 244,165.76920614036 (RAM usage ~ 1.2GB)
+
+
+### Client
+- there is no separate client implementation, use :
+    * curl or browser to test the service
+    * use the swagger UI at: http://localhost:5000/docs
+    * stress test with httperf/ab/siege: `make run-http-bench`
+
+### Http performance testing
+Even with mock implementation, the RPS maxes out at ~ 1700 RPS which is a bottleneck for either of the above implementations, I assume that is caused by the client re-createing connection for each request. I've tried some options for keep-alive, but did not investigate further.
+
 # Key-Value Server
 
 Your job is to build a simple [key-value server](https://en.wikipedia.org/wiki/Key%E2%80%93value_database) for immutable data. 
