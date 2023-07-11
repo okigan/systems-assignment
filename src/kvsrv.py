@@ -60,6 +60,7 @@ class KVServiceBisect:
 
         offset = self.wrap_index[index]
 
+        # TODO: change this not to use seek to make this multi-thread safe
         self.mmap_data.seek(offset + UUID_STRING_SIZE + 1)
         data = self.mmap_data.readline()
 
@@ -217,7 +218,7 @@ async def head_keys():
     return {"keys": keys}
 
 
-def minibench(kv_service: KVServiceBisect, request_count=500 * 1000):
+def minibench(kv_service: KVServiceBisect, request_count=200 * 1000):
     non_present_keys = [str(uuid4()) for _ in range(1000)]
     present_keys = kv_service.head_keys()
     random.shuffle(present_keys)
