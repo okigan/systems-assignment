@@ -7,7 +7,7 @@ import random
 import sys
 import time
 
-from tqdm import tqdm 
+from tqdm import tqdm
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException
@@ -29,20 +29,26 @@ class SupportsLenAndGetItem:
         return (self.mapped_file.size() - self.offset_in_bytes) // self.width_in_bytes
 
     def __getitem__(self, index):
-        offset = self.offset_in_bytes + index * self.width_in_bytes + self.prefix_in_bytes
+        offset = (
+            self.offset_in_bytes + index * self.width_in_bytes + self.prefix_in_bytes
+        )
         value_bytes = self.mapped_file[offset : offset + self.value_size]
         return int.from_bytes(value_bytes)
 
+
 OFFSET_SIZE = 5
 UUID_STRING_SIZE = 36
+
 
 def get_uuid_int(mm, offset: int):
     uuid_str = get_uuid_str(mm, offset)
     return int(UUID(uuid_str).hex, 16)
 
+
 def get_uuid_str(mm, offset: int):
-    uuid_str = mm[offset:offset+UUID_STRING_SIZE].decode()
+    uuid_str = mm[offset : offset + UUID_STRING_SIZE].decode()
     return uuid_str
+
 
 class KVServiceBisect:
     def __init__(self, data_file_name):
@@ -54,17 +60,17 @@ class KVServiceBisect:
 
         key_int = int(uuid_key.hex, 16)
 
-        index = bisect.bisect_left(self.wrap_index, key_int, key=lambda x: get_uuid_int(self.mmap_data, x))
+        index = bisect.bisect_left(
+            self.wrap_index, key_int, key=lambda x: get_uuid_int(self.mmap_data, x)
+        )
         if get_uuid_int(self.mmap_data, self.wrap_index[index]) != key_int:
             raise KeyError(f"Key {key} not found")
 
         offset = self.wrap_index[index]
 
-        # TODO: change this not to use seek to make this multi-thread safe
-        self.mmap_data.seek(offset + UUID_STRING_SIZE + 1)
-        data = self.mmap_data.readline()
+        end = self.mmap_data.find(b"\n", offset + UUID_STRING_SIZE + 1)
 
-        return data[:-1]
+        return self.mmap_data[offset + UUID_STRING_SIZE + 1 : end]
 
     def build_index(self):
         data_file = self.data_file_name
@@ -93,7 +99,9 @@ class KVServiceBisect:
             for pos in index:
                 f.write(pos.to_bytes(OFFSET_SIZE))
 
-        print(f"KVServiceBisect index built: {len(index):,} entries in {time.time() - st}s")
+        print(
+            f"KVServiceBisect index built: {len(index):,} entries in {time.time() - st}s"
+        )
 
         return index_file_name
 
@@ -109,7 +117,9 @@ class KVServiceBisect:
 
         self.wrap_index = SupportsLenAndGetItem(self.mmap_index, OFFSET_SIZE)
 
-        print(f"KVServiceBisect index loaded: {len(self.wrap_index):,} entries in {time.time() - st}s")
+        print(
+            f"KVServiceBisect index loaded: {len(self.wrap_index):,} entries in {time.time() - st}s"
+        )
 
     def head_keys(self):
         result = []
@@ -159,7 +169,9 @@ class KVServiceDict:
 
         self.offset_dict = offset_dict
 
-        print(f"KVServiceDict index built: {len(offset_dict):,} entries in {time.time() - st:,}s")
+        print(
+            f"KVServiceDict index built: {len(offset_dict):,} entries in {time.time() - st:,}s"
+        )
         size_of_offset_dict = sys.getsizeof(offset_dict)
 
         print(f"KVServiceDict index size: {size_of_offset_dict:,} bytes")
@@ -205,7 +217,7 @@ kv_service = None
 async def get(key: str):
     if kv_service is None:
         raise HTTPException(status_code=503, detail="Service not ready")
-    
+
     try:
         return kv_service.get(key)
     except KeyError as e:
@@ -236,7 +248,7 @@ def minibench(kv_service: KVServiceBisect, request_count=200 * 1000):
         key = present_keys[i % len(present_keys)]
         kv_service.get(key)
 
-        ops_count = (2*i)
+        ops_count = 2 * i
 
         if ops_count % (100 * 1000) == 0:
             elapsed_time = time.time() - st
@@ -278,11 +290,11 @@ def main(uvicorn_run, data_file_name, kvservice_type=dict, key=None):
 
 
 if __name__ == "kvsrv":
-    print(f'kvsrv sys.argv={sys.argv}')
+    print(f"kvsrv sys.argv={sys.argv}")
 
-    if len(sys.argv) >= 1 and sys.argv[0].find('uvicorn') != -1:
-        print('here')
-        main(False, './data/data-1M.data', 'dict')
+    if len(sys.argv) >= 1 and sys.argv[0].find("uvicorn") != -1:
+        print("here")
+        main(False, "./data/data-1M.data", "dict")
 
 
 if __name__ == "__main__":
@@ -295,7 +307,7 @@ if __name__ == "__main__":
         help="KVService type",
     )
     parser.add_argument("--key", help="Key to retrieve")
-    print(f'args={sys.argv}')
+    print(f"args={sys.argv}")
     args = parser.parse_args()
 
     main(True, args.data_file_name, args.kvservice_type, args.key)
