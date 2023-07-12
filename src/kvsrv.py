@@ -42,7 +42,7 @@ UUID_STRING_SIZE = 36
 
 def get_uuid_int(mm, offset: int):
     uuid_str = get_uuid_str(mm, offset)
-    return int(UUID(uuid_str).hex, 16)
+    return UUID(uuid_str).int
 
 
 def get_uuid_str(mm, offset: int):
@@ -58,7 +58,7 @@ class KVServiceBisect:
     def get(self, key):
         uuid_key = UUID(key)
 
-        key_int = int(uuid_key.hex, 16)
+        key_int = uuid_key.int
 
         index = bisect.bisect_left(
             self.wrap_index, key_int, key=lambda x: get_uuid_int(self.mmap_data, x)
@@ -137,7 +137,7 @@ class KVServiceDict:
         self.data_file_name = data_file_name
 
     def get(self, key):
-        key_int = int(UUID(key).hex, 16)
+        key_int = UUID(key).int
 
         index = self.offset_dict.get(key_int)
         if index is None:
@@ -162,7 +162,7 @@ class KVServiceDict:
                 offset = 0
                 for line in f:
                     uuid_str, _ = line.split(" ", maxsplit=1)
-                    uuid_num = int(UUID(uuid_str).hex, 16)
+                    uuid_num = UUID(uuid_str).int
                     offset_dict[uuid_num] = offset
                     offset += len(line)
                     pbar.update(len(line))
